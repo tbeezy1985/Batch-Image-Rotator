@@ -8,6 +8,8 @@ from PIL import Image, ImageOps
 
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
+MAX_IMAGE_SIDE = 1200
+SAVE_QUALITY = 88
 
 
 def safe_angle_name(angle):
@@ -27,6 +29,11 @@ def output_path_for(input_file, input_root, output_root, suffix, keep_subfolders
 
 def rotate_image(image, angle):
     return image.rotate(angle, expand=True, fillcolor=(255, 255, 255))
+
+
+def prepare_image_for_training(image):
+    image.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE), Image.Resampling.LANCZOS)
+    return image
 
 
 def zip_folder(folder, zip_path):
@@ -105,12 +112,13 @@ def rotate_images(
             try:
                 with Image.open(image_file) as image:
                     image = ImageOps.exif_transpose(image).convert("RGB")
+                    image = prepare_image_for_training(image)
 
                     if save_originals:
                         original_output = output_path_for(
                             image_file, input_root, output_root, "original", keep_subfolders
                         )
-                        image.save(original_output, quality=95)
+                        image.save(original_output, quality=SAVE_QUALITY, optimize=True)
                         saved_count += 1
 
                     for angle in angles:
@@ -122,7 +130,7 @@ def rotate_images(
                             f"rot{safe_angle_name(angle)}",
                             keep_subfolders,
                         )
-                        rotated.save(angle_output, quality=95)
+                        rotated.save(angle_output, quality=SAVE_QUALITY, optimize=True)
                         saved_count += 1
 
             except Exception as error:
