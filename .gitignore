@@ -1,0 +1,18 @@
+.gradle/
+.idea/
+build/
+app/build/
+local.properties
+*.iml
+*.apk
+*.aab
+.venv/
+__pycache__/
+.DS_Store
+tree_rotator_runs/
+rotated_tree_images/
+rotated_tree_images.zip
+Cottonwood*.zip
+Maple*.zip
+Oak*.zip
+Shortleaf Pine*.zip

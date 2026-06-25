@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dr. Brauker's Batch Image Rotator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='tree_rotator.css') }}">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <img src="{{ url_for('static', filename='tree-rotator-tree.png') }}" alt="">
+          <div>
+            <h1>Dr. Brauker's Batch <span class="title-break">Image Rotator</span></h1>
+            <p>For Teachable Machine.</p>
+          </div>
+        </div>
+        <div class="status-chip">Web app</div>
+      </header>
+
+      <section class="intro-panel" aria-label="App summary">
+        <div>
+          <h2>Batch rotate class image zips</h2>
+          <p>Upload class zips and choose rotations.<br>Download a training zip.</p>
+        </div>
+        <img src="{{ url_for('static', filename='tree-rotator-tree.png') }}" alt="">
+      </section>
+
+      <form class="workspace" action="{{ url_for('rotate') }}" method="post" enctype="multipart/form-data">
+        <section class="upload-panel" aria-labelledby="upload-title">
+          <div class="section-heading">
+            <h2 id="upload-title">Image zips</h2>
+            <span>.zip files</span>
+          </div>
+
+          <label class="drop-zone">
+            <input id="image-zips" type="file" name="image_zips" accept=".zip" multiple required>
+            <span class="drop-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 16V4m0 0 4 4m-4-4-4 4"></path>
+                <path d="M20 16v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3"></path>
+              </svg>
+            </span>
+            <strong>Choose zip files</strong>
+            <small id="file-summary">Cottonwood, Maple, Oak, or Pine.</small>
+          </label>
+
+          {% if error %}
+            <div class="message error">{{ error }}</div>
+          {% endif %}
+
+          {% if result %}
+            <div class="message success">
+              <strong>Finished.</strong>
+              <span>{{ result.image_count }} images became {{ result.saved_count }} files.</span>
+            </div>
+          {% endif %}
+        </section>
+
+        <section class="controls-panel" aria-labelledby="controls-title">
+          <div class="section-heading">
+            <h2 id="controls-title">Rotations</h2>
+            <span>degrees</span>
+          </div>
+
+          <div class="angle-grid">
+            {% for angle in [-15, -10, 10, 15, 90, 180, 270] %}
+              <label class="angle-option">
+                <input type="checkbox" name="angles" value="{{ angle }}" {% if angle in [-15, -10, 10, 15] %}checked{% endif %}>
+                <span>{{ angle }}</span>
+              </label>
+            {% endfor %}
+          </div>
+
+          <label class="field">
+            <span>Custom rotations</span>
+            <input type="text" name="custom_angles" placeholder="Example: 5, 20, -25">
+          </label>
+
+          <div class="option-list">
+            <label>
+              <input type="checkbox" name="save_originals" checked>
+              <span>Keep original images</span>
+            </label>
+            <label>
+              <input type="checkbox" name="keep_subfolders" checked>
+              <span>Preserve class folders</span>
+            </label>
+          </div>
+
+          <button class="primary-button" type="submit">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+              <path d="M21 3v6h-6"></path>
+            </svg>
+            Create rotated zip
+          </button>
+        </section>
+      </form>
+
+      <section class="results-panel" aria-labelledby="results-title">
+        <div class="section-heading">
+          <h2 id="results-title">Output</h2>
+          {% if result %}
+            <a class="download-link" href="{{ url_for('download', run_id=run_id) }}">Download zip</a>
+          {% else %}
+            <span>waiting</span>
+          {% endif %}
+        </div>
+
+        {% if result %}
+          <div class="result-grid">
+            <div class="stat">
+              <span>Angles</span>
+              <strong>{{ angles | join(', ') }}</strong>
+            </div>
+            <div class="stat">
+              <span>Images found</span>
+              <strong>{{ result.image_count }}</strong>
+            </div>
+            <div class="stat">
+              <span>Files saved</span>
+              <strong>{{ result.saved_count }}</strong>
+            </div>
+            <div class="stat">
+              <span>Skipped</span>
+              <strong>{{ result.skipped | length }}</strong>
+            </div>
+          </div>
+
+          {% if classes %}
+            <div class="class-list">
+              {% for row in classes %}
+                <div class="class-row">
+                  <span>{{ row.name }}</span>
+                  <strong>{{ row.count }} files</strong>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% if result.skipped %}
+            <details class="skipped-list">
+              <summary>Skipped files</summary>
+              {% for skipped in result.skipped %}
+                <p>{{ skipped }}</p>
+              {% endfor %}
+            </details>
+          {% endif %}
+        {% else %}
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 19h16"></path>
+              <path d="M7 19V9l5-4 5 4v10"></path>
+              <path d="M10 19v-6h4v6"></path>
+            </svg>
+            <p>Your finished zip and class counts will appear here.</p>
+          </div>
+        {% endif %}
+      </section>
+    </main>
+
+    <script>
+      const input = document.querySelector("#image-zips");
+      const summary = document.querySelector("#file-summary");
+
+      input?.addEventListener("change", () => {
+        const names = Array.from(input.files).map((file) => file.name);
+        summary.textContent = names.length ? names.join(", ") : "No files selected.";
+      });
+    </script>
+  </body>
+</html>
